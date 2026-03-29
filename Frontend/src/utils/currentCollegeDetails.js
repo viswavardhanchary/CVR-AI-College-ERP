@@ -1,0 +1,1 @@
+export const COLLEGE_UNIQUE_NAME = 'cvr'

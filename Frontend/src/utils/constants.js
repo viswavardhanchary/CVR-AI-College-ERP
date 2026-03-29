@@ -1,0 +1,1 @@
+export const MAIN_WEBSITE_URL = 'http://localhost:5173'
