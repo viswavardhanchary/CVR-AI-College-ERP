@@ -12,8 +12,11 @@ import { AdminProfile } from "./components/AdminProfile";
 import { Results } from "./components/Results";
 import { InternalResults } from "./components/InternalResults";
 import { ExternalResults } from "./components/ExternalResults";
-import {Assignments} from './components/Assignments';
+import { Assignments } from './components/Assignments';
 import AssignmentDetails from './components/AssignmentDetails';
+import { TimetableUpload } from "./components/TimetableUpload";
+import { UploadResultsAdmin } from "./components/UploadResultsAdmin";
+import { Attendance } from "./components/Attendence";
 
 
 const DummyComponent = ({ title }) => <div className="p-6">{title}</div>;
@@ -56,7 +59,7 @@ function App() {
           path: "profile/upload-docs", 
           element: <div>Upload Docus</div> 
         },
-        { path: "academics/attendance", element:<div>Attendance</div> },
+        { path: "academics/attendance", element:<Attendance /> },
         { path: "academics/assignments", element: <Assignments/>
         },
         { path: "academics/assignments/:id", element: <AssignmentDetails />
@@ -80,10 +83,10 @@ function App() {
         { path: "admin-dashboard", element: <Home/> },
         { path: "user-access-management/user-management", element: <DummyComponent title="User Management" /> },
         { path: "user-access-management/doc-verification", element: <DummyComponent title="Document Verification" /> },
-        { path: "academic-administration/academic-config", element: <DummyComponent title="Academic Configuration" /> },
+        { path: "academic-administration/academic-config", element: <UploadResultsAdmin/> },
         { path: "academic-administration/attendance-oversight", element: <DummyComponent title="Attendance Oversight" /> },
         { path: "academic-administration/exam-cell", element: <DummyComponent title="Examination Cell" /> },
-        { path: "academic-administration/academic-calendar", element: <DummyComponent title="Academic Calendar" /> },
+        { path: "academic-administration/academic-calendar", element: <TimetableUpload/> },
         { path: "finance-operations/financial-hub", element: <DummyComponent title="Financial Hub" /> },
         { path: "finance-operations/transport-logistics", element: <DummyComponent title="Transport Logistics" /> },
         { path: "communication/comm-center", element: <DummyComponent title="Communication Center" /> },

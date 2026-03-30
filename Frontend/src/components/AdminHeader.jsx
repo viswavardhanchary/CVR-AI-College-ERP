@@ -31,7 +31,7 @@ export function AdminHeader({ adminData, handleSidebarToggle, handleMouseEnter, 
             <div className="flex items-center gap-2 justify-center sm:justify-start sm:px-4">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border border-blue-100 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
                     <img
-                        src={collegeData?.image?.[0]?.file_url}
+                        src={collegeData?.logo?.file_url}
                         alt="College Logo"
                         onError={handleImageError}
                         className="w-full h-full object-contain p-1"

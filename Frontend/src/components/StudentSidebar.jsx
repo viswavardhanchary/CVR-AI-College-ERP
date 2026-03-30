@@ -2,7 +2,8 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import {
     ChevronDown, UserCircle, User, CloudUpload,
     GraduationCap, Pen, BookOpenCheck, FileSpreadsheet, FileText, CalendarDays, Clock, Trophy,
-    Megaphone, BellRing, PartyPopper, LifeBuoy, Bus, Wallet, FilePlus, LogOut, Contact, LayoutDashboard
+    Megaphone, BellRing, PartyPopper, LifeBuoy, Bus, Wallet, FilePlus, LogOut, Contact, LayoutDashboard,
+    ExternalLink
 } from "lucide-react";
 
 export function StudentSidebar({
@@ -38,6 +39,7 @@ export function StudentSidebar({
     const hovers = {
         profile: (e) => handleMouseEnter(e, `${userdata.first_name} ${userdata.last_name}`),
         profileView: (e) => handleMouseEnter(e, "View Profile"),
+        chatView: (e) => handleMouseEnter(e, "Chat Console"),
         signOut: (e) => handleMouseEnter(e, "Sign Out"),
         dashboard: (e) => handleMouseEnter(e, "My Dashboard"),
         profileMenu: (e) => handleMouseEnter(e, "Profile"),
@@ -78,14 +80,14 @@ export function StudentSidebar({
 
                     <div className="flex items-center gap-4 w-full justify-center mt-2">
                         <Link
-                            to={`/${type}/profile/my-profile`}
+                            to={`/${type}/chat/ui`}
                             onClick={handleMobileOverlayClick}
-                            onMouseEnter={hovers.profileView}
+                            onMouseEnter={hovers.chatView}
                             onMouseLeave={handleMouseLeave}
                             className="p-2 hover:text-emerald-400 transition-all duration-300 group/icon"
-                        >
-                            <UserCircle className="w-5 h-5 transition-transform duration-300 group-hover/icon:scale-110" />
+                        > <UserCircle className="w-5 h-5 transition-transform duration-300 group-hover/icon:scale-110" />
                         </Link>
+                      
                         <Link
                             to={`/${type}/logout`}
                             onClick={handleMobileOverlayClick}
@@ -101,14 +103,26 @@ export function StudentSidebar({
 
             {/* Navigation Menu */}
             <nav className="py-4 flex flex-col gap-1.5 relative">
-
+                <Link
+                    to={`/${type}/chat/ui`}
+                    onClick={handleMobileOverlayClick}
+                    onMouseEnter={hovers.chatView}
+                    onMouseLeave={handleMouseLeave}
+                    className={`menu-link flex items-center gap-3 py-3 group-[.sidebar-collapsed]/sidebar:py-2 px-4 transition-all duration-300 ease-out hover:bg-white/8 hover:brightness-110 text-white group relative group-[.sidebar-collapsed]/sidebar:flex-col group-[.sidebar-collapsed]/sidebar:gap-0 group-[.sidebar-collapsed]/sidebar:justify-center ${location.pathname.includes('/chat/ui') ? 'bg-white/10' : ''}`}
+                >
+                    <div className="flex-col flex items-center justify-center">
+                        <ExternalLink className="w-5 h-5 shrink-0 text-blue-300 drop-shadow-md stroke-[2.5] transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-100" />
+                        <span className="hidden group-[.sidebar-collapsed]/sidebar:block text-[10px] text-center mt-1 px-1 opacity-80 leading-tight">Chat.</span>
+                    </div>
+                    <span className="nav-text group-[.sidebar-collapsed]/sidebar:hidden font-medium text-sm whitespace-nowrap">Open Chat Console </span>
+                </Link>
                 {/* Dashboard */}
                 <Link
                     to={`/${type}/student-dashboard`}
                     onClick={handleMobileOverlayClick}
                     onMouseEnter={hovers.dashboard}
                     onMouseLeave={handleMouseLeave}
-                    className={`menu-link flex items-center gap-3 py-3 group-[.sidebar-collapsed]/sidebar:py-2 px-4 transition-all duration-300 ease-out hover:bg-white/8 hover:brightness-110 text-white group relative group-[.sidebar-collapsed]/sidebar:flex-col group-[.sidebar-collapsed]/sidebar:gap-0 group-[.sidebar-collapsed]/sidebar:justify-center ${location.pathname.includes('/dashboard') ? 'bg-white/10' : ''}`}
+                    className={`menu-link flex items-center gap-3 py-3 group-[.sidebar-collapsed]/sidebar:py-2 px-4 transition-all duration-300 ease-out hover:bg-white/8 hover:brightness-110 text-white group relative group-[.sidebar-collapsed]/sidebar:flex-col group-[.sidebar-collapsed]/sidebar:gap-0 group-[.sidebar-collapsed]/sidebar:justify-center ${location.pathname.includes('dashboard') ? 'bg-white/10' : ''}`}
                 >
                     <div className="flex-col flex items-center justify-center">
                         <LayoutDashboard className="w-5 h-5 shrink-0 text-blue-300 drop-shadow-md stroke-[2.5] transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-100" />

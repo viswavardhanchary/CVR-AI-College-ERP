@@ -20,3 +20,21 @@ export const getResultsByStudent = async (type, collegeId, studentId, token, fil
 export const getResultsByStudentByExamType = async (type, collegeId, studentId, examType, token, filters = {}) => {
   return getResultsByStudent(type, collegeId, studentId, token, { ...filters, exam_type: examType });
 };
+
+export const createResult = async (type, collegeId, token, payload) => {
+  try {
+    const response = await api_college.post(`/result/${type}/${collegeId}`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return {
+      status: true,
+      result: response.data,
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      status: false,
+      error: e.response?.data || e.message,
+    };
+  }
+};

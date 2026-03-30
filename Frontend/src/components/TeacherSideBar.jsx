@@ -4,7 +4,7 @@ import {
     LayoutDashboard, UserCircle, ChevronDown, User, GraduationCap,
     BookOpen, CalendarCheck, FileCheck, CloudUpload, Users, Heart,
     Megaphone, Calendar, PartyPopper, FilePlus, ShieldCheck,
-    FileCheck2, Briefcase, Wallet, Truck, LogOut, Bell
+    FileCheck2, Briefcase, Wallet, Truck, LogOut, Bell,ExternalLink
 } from "lucide-react";
 
 export function TeacherSidebar({
@@ -71,6 +71,19 @@ export function TeacherSidebar({
             </div>}
 
             <nav className="py-4 flex flex-col gap-1.5 relative">
+                 <Link
+                                    to={`/${type}/chat/ui`}
+                                    onClick={handleMobileOverlayClick}
+                                    onMouseEnter={(e) => handleMouseEnter(e, "Chat Console")}
+                                    onMouseLeave={handleMouseLeave}
+                                    className={`menu-link flex items-center gap-3 py-3 group-[.sidebar-collapsed]/sidebar:py-2 px-4 transition-all duration-300 ease-out hover:bg-white/8 hover:brightness-110 text-white group relative group-[.sidebar-collapsed]/sidebar:flex-col group-[.sidebar-collapsed]/sidebar:gap-0 group-[.sidebar-collapsed]/sidebar:justify-center ${location.pathname.includes('/chat/ui') ? 'bg-white/10' : ''}`}
+                                >
+                                    <div className="flex-col flex items-center justify-center">
+                                        <ExternalLink className="w-5 h-5 shrink-0 text-blue-300 drop-shadow-md stroke-[2.5] transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-100" />
+                                        <span className="hidden group-[.sidebar-collapsed]/sidebar:block text-[10px] text-center mt-1 px-1 opacity-80 leading-tight">Chat.</span>
+                                    </div>
+                                    <span className="nav-text group-[.sidebar-collapsed]/sidebar:hidden font-medium text-sm whitespace-nowrap">Open Chat Console </span>
+                                </Link>
                 <Link to={`/${type}/teacher-dashboard`} onClick={handleMobileOverlayClick} onMouseEnter={(e) => handleMouseEnter(e, "My Dashboard")} onMouseLeave={handleMouseLeave} className={`menu-link flex items-center gap-3 py-3 px-4 transition-all duration-300 ease-out hover:bg-white/8 hover:brightness-110 text-white group relative group-[.sidebar-collapsed]/sidebar:flex-col group-[.sidebar-collapsed]/sidebar:gap-0 group-[.sidebar-collapsed]/sidebar:justify-center ${location.pathname.includes("teacher-dashboard") ? "bg-white/8 brightness-110" : ""}`}>
                     <div className="flex-col flex items-center justify-center">
                         <LayoutDashboard className="w-5 h-5 shrink-0 text-blue-300 drop-shadow-md stroke-[2.5] transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-100" />

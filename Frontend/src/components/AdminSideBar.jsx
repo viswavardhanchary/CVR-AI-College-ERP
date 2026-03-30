@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom"; 
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
     LayoutDashboard, Users, ChevronDown, UserCog, ShieldCheck, GraduationCap,
     Settings2, CalendarCheck, FileSpreadsheet, CalendarDays, Briefcase, Wallet,
-    Bus, Megaphone, MessageSquare, ShieldAlert, Workflow, History, LogOut, UserCircle
+    Bus, Megaphone, MessageSquare, ShieldAlert, Workflow, History, LogOut, UserCircle,ExternalLink
 } from "lucide-react";
 
 export function AdminSidebar({
@@ -44,34 +44,47 @@ export function AdminSidebar({
             overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-sm hover:[&::-webkit-scrollbar-thumb]:bg-white/40 overflow-x-hidden`}
         >
             {
-        adminData && <div className="px-6 group-[.sidebar-collapsed]/sidebar:px-2 py-2 group-[.sidebar-collapsed]/sidebar:py-4 flex flex-col items-center border-b border-white/10 transition-all duration-300 shrink-0 relative overflow-hidden">
-            <div className="relative cursor-pointer group/profile mb-4" onMouseEnter={(e) => handleMouseEnter(e, `${adminData.first_name} ${adminData.last_name}`)} onMouseLeave={handleMouseLeave}>
-                <div className="profile-img w-20 h-20 group-[.sidebar-collapsed]/sidebar:w-12! group-[.sidebar-collapsed]/sidebar:h-12! group-[.sidebar-collapsed]/sidebar:mb-0 rounded-full bg-slate-700/50 p-1 transition-all duration-300 relative flex items-center justify-center overflow-hidden border border-white/20 shadow-lg">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${adminData.first_name}&backgroundColor=b6e3f4`} alt="Admin Profile" className="w-full h-full rounded-full object-cover z-10 relative" />
-                </div>
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-lg border border-white/20 z-20 whitespace-nowrap group-[.sidebar-collapsed]/sidebar:hidden transition-all duration-300 transform group-hover/profile:scale-105">
-                    {adminData.position}
-                </div>
-            </div>
+                adminData && <div className="px-6 group-[.sidebar-collapsed]/sidebar:px-2 py-2 group-[.sidebar-collapsed]/sidebar:py-4 flex flex-col items-center border-b border-white/10 transition-all duration-300 shrink-0 relative overflow-hidden">
+                    <div className="relative cursor-pointer group/profile mb-4" onMouseEnter={(e) => handleMouseEnter(e, `${adminData.first_name} ${adminData.last_name}`)} onMouseLeave={handleMouseLeave}>
+                        <div className="profile-img w-20 h-20 group-[.sidebar-collapsed]/sidebar:w-12! group-[.sidebar-collapsed]/sidebar:h-12! group-[.sidebar-collapsed]/sidebar:mb-0 rounded-full bg-slate-700/50 p-1 transition-all duration-300 relative flex items-center justify-center overflow-hidden border border-white/20 shadow-lg">
+                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${adminData.first_name}&backgroundColor=b6e3f4`} alt="Admin Profile" className="w-full h-full rounded-full object-cover z-10 relative" />
+                        </div>
+                        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-lg border border-white/20 z-20 whitespace-nowrap group-[.sidebar-collapsed]/sidebar:hidden transition-all duration-300 transform group-hover/profile:scale-105">
+                            {adminData.position}
+                        </div>
+                    </div>
 
-            <div className="profile-text group-[.sidebar-collapsed]/sidebar:hidden text-center flex flex-col items-center w-full pb-2">
-                <h2 className="font-heading font-bold text-[18px] tracking-tight text-white drop-shadow-sm leading-tight transition-colors duration-300 z-10">{adminData.first_name} {adminData.last_name}</h2>
-                <span className="text-green-300 text-[10px] font-bold tracking-[0.2em] uppercase mt-1 drop-shadow-md">{adminData.dept}</span>
-                <span className="text-green-300 text-[10px] font-bold tracking-[0.2em] uppercase mt-1 drop-shadow-md">{adminData.roll_no}</span>
+                    <div className="profile-text group-[.sidebar-collapsed]/sidebar:hidden text-center flex flex-col items-center w-full pb-2">
+                        <h2 className="font-heading font-bold text-[18px] tracking-tight text-white drop-shadow-sm leading-tight transition-colors duration-300 z-10">{adminData.first_name} {adminData.last_name}</h2>
+                        <span className="text-green-300 text-[10px] font-bold tracking-[0.2em] uppercase mt-1 drop-shadow-md">{adminData.dept}</span>
+                        <span className="text-green-300 text-[10px] font-bold tracking-[0.2em] uppercase mt-1 drop-shadow-md">{adminData.roll_no}</span>
 
-                <div className="flex items-center gap-4 w-full justify-center mt-2">
-                    <Link to={`/${type}/admin-profile/my-profile`} onClick={handleMobileOverlayClick} onMouseEnter={(e) => handleMouseEnter(e, "View Profile")} onMouseLeave={handleMouseLeave} className="p-1.5 hover:text-green-400 transition-all duration-300 group/icon">
-                        <UserCircle className="w-5 h-5 transition-transform duration-300 group-hover/icon:scale-110" />
-                    </Link>
-                    <Link to={`/${type}/logout`} onClick={handleMobileOverlayClick} onMouseEnter={(e) => handleMouseEnter(e, "Sign Out")} onMouseLeave={handleMouseLeave} className="p-1.5 hover:text-rose-400 transition-all duration-300 group/icon">
-                        <LogOut className="w-5 h-5 transition-transform duration-300 group-hover/icon:scale-110" />
-                    </Link>
+                        <div className="flex items-center gap-4 w-full justify-center mt-2">
+                            <Link to={`/${type}/admin-profile/my-profile`} onClick={handleMobileOverlayClick} onMouseEnter={(e) => handleMouseEnter(e, "View Profile")} onMouseLeave={handleMouseLeave} className="p-1.5 hover:text-green-400 transition-all duration-300 group/icon">
+                                <UserCircle className="w-5 h-5 transition-transform duration-300 group-hover/icon:scale-110" />
+                            </Link>
+                            <Link to={`/${type}/logout`} onClick={handleMobileOverlayClick} onMouseEnter={(e) => handleMouseEnter(e, "Sign Out")} onMouseLeave={handleMouseLeave} className="p-1.5 hover:text-rose-400 transition-all duration-300 group/icon">
+                                <LogOut className="w-5 h-5 transition-transform duration-300 group-hover/icon:scale-110" />
+                            </Link>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    }
+            }
 
             <nav className="py-4 flex flex-col gap-1.5 relative">
+                <Link
+                    to={`/${type}/chat/ui`}
+                    onClick={handleMobileOverlayClick}
+                    onMouseEnter={(e) => handleMouseEnter(e, "Chat Console")}
+                    onMouseLeave={handleMouseLeave}
+                    className={`menu-link flex items-center gap-3 py-3 group-[.sidebar-collapsed]/sidebar:py-2 px-4 transition-all duration-300 ease-out hover:bg-white/8 hover:brightness-110 text-white group relative group-[.sidebar-collapsed]/sidebar:flex-col group-[.sidebar-collapsed]/sidebar:gap-0 group-[.sidebar-collapsed]/sidebar:justify-center ${location.pathname.includes('/chat/ui') ? 'bg-white/10' : ''}`}
+                >
+                    <div className="flex-col flex items-center justify-center">
+                        <ExternalLink className="w-5 h-5 shrink-0 text-blue-300 drop-shadow-md stroke-[2.5] transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-100" />
+                        <span className="hidden group-[.sidebar-collapsed]/sidebar:block text-[10px] text-center mt-1 px-1 opacity-80 leading-tight">Chat.</span>
+                    </div>
+                    <span className="nav-text group-[.sidebar-collapsed]/sidebar:hidden font-medium text-sm whitespace-nowrap">Open Chat Console </span>
+                </Link>
                 <Link to={`/${type}/admin-dashboard`} onClick={handleMobileOverlayClick} onMouseEnter={(e) => handleMouseEnter(e, "Admin Dashboard")} onMouseLeave={handleMouseLeave} className={`menu-link flex items-center gap-3 py-3 px-4 transition-all duration-300 ease-out hover:bg-white/8 hover:brightness-110 text-white group relative group-[.sidebar-collapsed]/sidebar:flex-col group-[.sidebar-collapsed]/sidebar:gap-0 group-[.sidebar-collapsed]/sidebar:justify-center ${location.pathname.includes("admin-dashboard") ? "bg-white/8 brightness-110" : ""}`}>
                     <div className="flex-col flex items-center justify-center">
                         <LayoutDashboard className="w-5 h-5 shrink-0 text-blue-300 drop-shadow-md stroke-[2.5] transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-100" />
@@ -203,7 +216,7 @@ export function AdminSidebar({
                         </Link>
                     </div>
                 </div>
-                
+
             </nav>
             <div className="p-2 group-[.sidebar-collapsed]/sidebar:pb-8 border-t border-white/20 bg-[#100636] shrink-0 relative z-50" onClick={preventFooterPropagation}>
                 <Link

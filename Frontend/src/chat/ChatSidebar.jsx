@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Users, User, CheckCheck, FileText, Video as VideoIcon, ChevronDown, Heart, Bookmark, Eraser, Trash2 } from 'lucide-react';
 import { getAvatarColor } from './avatarUtils';
+import { useParams,Link } from 'react-router';
 
 export function ChatSidebar({ chats, participants = [], onlineUsers = {}, activeChatId, onSelectChat, onSelectParticipant, onCreateGroup, onToggleFavorite, onToggleImportant, onClearChat, onDeleteChat }) {
   const [state, setState] = useState({
@@ -9,7 +10,7 @@ export function ChatSidebar({ chats, participants = [], onlineUsers = {}, active
     openDropdown: null,
     showContacts: false
   });
-
+  const {type} = useParams();
   const filteredParticipants = participants.filter(participant => participant.name.toLowerCase().includes(state.search.toLowerCase()));
   
   const dropdownRef = useRef(null);
@@ -42,7 +43,7 @@ export function ChatSidebar({ chats, participants = [], onlineUsers = {}, active
           Create Group
         </button>
       </div>
-
+      <Link to={`/${type}`}>Back to Dashboard</Link>
       <div ref={searchRef} className="px-3 pb-2 pt-3 bg-[#ffffff] shrink-0 relative">
         <div className="flex items-center rounded-lg bg-[#f1f5f9] px-3 py-1.5 border border-[#e2e8f0] transition-all duration-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500">
           <Search className="h-4 w-4 text-[#94a3b8]" />

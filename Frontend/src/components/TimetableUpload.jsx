@@ -1,44 +1,69 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   GraduationCap,
   Book,
   ChevronDown,
+  Clock,
   Layers,
   Calendar,
   GitBranch,
   Users,
-  Clock,
   Trash2,
   Plus,
   Save,
 } from "lucide-react";
+import { createTimetable } from "../services/timetable.services";
+import { getCollegeDetails } from "../services/verification.services";
 
 export function TimetableUpload() {
   const [formData, setFormData] = useState({
-    course: "",
-    year: "",
-    batch: "",
-    stream: "",
+    dept: "",
     section: "",
-    schedule: [
-      { id: Date.now(), from: "", to: "", subject: "", instructor: "" },
+    batchFrom: "",
+    batchTo: "",
+    semNumber: "",
+    dateFrom: "",
+    dateTo: "",
+    instructions: "",
+    timeslots: [
+      {
+        id: Date.now(),
+        day: "",
+        from_time: "",
+        to_time: "",
+        class_type: "",
+        description: "",
+        room_no: "",
+        block: "",
+      },
     ],
   });
+  const [collegeId, setCollegeId] = useState("");
+  const [message, setMessage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadCollege = async () => {
+      const response = await getCollegeDetails();
+      if (response.status) {
+        setCollegeId(response.college._id);
+      } else {
+        setMessage("Unable to load college details. Please refresh the page.");
+      }
+    };
+    loadCollege();
+  }, []);
 
   const handleMainChange = (e) => {
     const { name, value } = e.target;
-    if (name === "course") {
-      setFormData((prev) => ({ ...prev, course: value, year: "" }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleScheduleChange = (id, field, value) => {
+  const handleTimeslotChange = (id, field, value) => {
     setFormData((prev) => ({
       ...prev,
-      schedule: prev.schedule.map((row) =>
-        row.id === id ? { ...row, [field]: value } : row,
+      timeslots: prev.timeslots.map((slot) =>
+        slot.id === id ? { ...slot, [field]: value } : slot,
       ),
     }));
   };
@@ -46,39 +71,139 @@ export function TimetableUpload() {
   const addRow = () => {
     setFormData((prev) => ({
       ...prev,
-      schedule: [
-        ...prev.schedule,
-        { id: Date.now(), from: "", to: "", subject: "", instructor: "" },
+      timeslots: [
+        ...prev.timeslots,
+        {
+          id: Date.now(),
+          day: "",
+          from_time: "",
+          to_time: "",
+          class_type: "",
+          description: "",
+          room_no: "",
+          block: "",
+        },
       ],
     }));
   };
 
   const removeRow = (id) => {
-    setFormData((prev) => {
-      if (prev.schedule.length > 1) {
-        return {
-          ...prev,
-          schedule: prev.schedule.filter((row) => row.id !== id),
-        };
+    setFormData((prev) => ({
+      ...prev,
+      timeslots: prev.timeslots.filter((slot) => slot.id !== id),
+    }));
+  };
+
+  const buildDayByDay = () => {
+    return formData.timeslots.reduce((acc, slot) => {
+      if (!slot.day) return acc;
+      const dayKey = slot.day;
+      const timeItem = {
+        from_time: slot.from_time,
+        to_time: slot.to_time,
+        class_type: slot.class_type,
+        description: slot.description,
+        room_no: slot.room_no ? Number(slot.room_no) : undefined,
+        block: slot.block,
+      };
+
+      const existing = acc.find((item) => item.day === dayKey);
+      if (existing) {
+        existing.times.push(timeItem);
       } else {
-        return {
-          ...prev,
-          schedule: [
-            { id: Date.now(), from: "", to: "", subject: "", instructor: "" },
-          ],
-        };
+        acc.push({
+          day: dayKey,
+          instructions: formData.instructions,
+          times: [timeItem],
+        });
       }
-    });
+      return acc;
+    }, []);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
+    setMessage(null);
+
+    if (!collegeId) {
+      setMessage("College information is missing.");
+      return;
+    }
+
+    if (
+      !formData.dept ||
+      !formData.section ||
+      !formData.batchFrom ||
+      !formData.batchTo ||
+      !formData.semNumber ||
+      !formData.dateFrom ||
+      !formData.dateTo
+    ) {
+      setMessage("Please complete all timetable metadata fields.");
+      return;
+    }
+
+    const dayByDay = buildDayByDay();
+    if (!dayByDay.length) {
+      setMessage("Please add at least one timetable slot with a day selected.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("Authentication token not found. Please log in again.");
+      return;
+    }
+
+    const payload = {
+      from: formData.dateFrom ? new Date(formData.dateFrom) : undefined,
+      to: formData.dateTo ? new Date(formData.dateTo) : undefined,
+      dept: formData.dept,
+      section: formData.section,
+      batch: {
+        from: Number(formData.batchFrom),
+        to: Number(formData.batchTo),
+      },
+      sem_number: Number(formData.semNumber),
+      college: collegeId,
+      day_by_day: dayByDay,
+    };
+
+    setIsSubmitting(true);
+    const response = await createTimetable(collegeId, token, payload);
+    setIsSubmitting(false);
+
+    if (response.status) {
+      setMessage("Timetable created successfully.");
+      setFormData({
+        dept: "",
+        section: "",
+        batchFrom: "",
+        batchTo: "",
+        semNumber: "",
+        dateFrom: "",
+        dateTo: "",
+        instructions: "",
+        timeslots: [
+          {
+            id: Date.now(),
+            day: "",
+            from_time: "",
+            to_time: "",
+            class_type: "",
+            description: "",
+            room_no: "",
+            block: "",
+          },
+        ],
+      });
+    } else {
+      setMessage(
+        `Failed to create timetable: ${response.error?.message || response.error || "Unknown error"}`,
+      );
+    }
   };
 
-  const yearsCount =
-    formData.course === "B.Tech" ? 4 : formData.course === "M.Tech" ? 2 : 0;
-  const yearOptions = Array.from({ length: yearsCount }, (_, i) => i + 1);
 
   return (
     <div className="bg-gray-50 flex flex-col h-dvh overflow-hidden font-body text-gray-800">
@@ -114,15 +239,16 @@ export function TimetableUpload() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 relative z-10">
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-gray-700">
-                    Course
+                    Department
                   </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                       <Book className="w-4 h-4 text-gray-400 group-focus-within:text-[#100636] transition-colors" />
                     </div>
                     <select
-                      name="course"
-                      value={formData.course}
+                      id="dept"
+                      name="dept"
+                      value={formData.dept}
                       onChange={handleMainChange}
                       className="w-full h-11 pl-10.5 pr-10 text-sm font-medium bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] transition-all appearance-none outline-none text-gray-700 cursor-pointer hover:bg-white shadow-sm"
                       required
@@ -130,8 +256,12 @@ export function TimetableUpload() {
                       <option value="" disabled>
                         Select Course
                       </option>
-                      <option value="B.Tech">B.Tech</option>
-                      <option value="M.Tech">M.Tech</option>
+                      <option value="CSE">CSE</option>
+                      <option value="EEE">EEE</option>
+                      <option value="ECE">ECE</option>
+                      <option value="MECH">MECH</option>
+                      <option value="CIVIL">CIVIL</option>
+                      <option value="IT">IT</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
                       <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -141,38 +271,31 @@ export function TimetableUpload() {
 
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-gray-700">
-                    Year
+                    Semester Number
                   </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                       <Layers className="w-4 h-4 text-gray-400 group-focus-within:text-[#100636] transition-colors" />
                     </div>
                     <select
-                      name="year"
-                      value={formData.year}
+                      id="semNumber"
+                      name="semNumber"
+                      value={formData.semNumber}
                       onChange={handleMainChange}
-                      className="w-full h-11 pl-10.5 pr-10 text-sm font-medium bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] transition-all appearance-none outline-none text-gray-700 cursor-pointer hover:bg-white shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-full h-11 pl-10.5 pr-10 text-sm font-medium bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] transition-all appearance-none outline-none text-gray-700 cursor-pointer hover:bg-white shadow-sm"
                       required
-                      disabled={!formData.course}
                     >
                       <option value="" disabled>
-                        {!formData.course
-                          ? "Select Course First"
-                          : "Select Year"}
+                      Select Semester
                       </option>
-                      {yearOptions.map((i) => (
-                        <option key={i} value={i}>
-                          {i +
-                            (i === 1
-                              ? "st"
-                              : i === 2
-                                ? "nd"
-                                : i === 3
-                                  ? "rd"
-                                  : "th")}{" "}
-                          Year
-                        </option>
-                      ))}
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
                       <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -182,15 +305,16 @@ export function TimetableUpload() {
 
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-gray-700">
-                    Batch
+                    Batch From
                   </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                       <Calendar className="w-4 h-4 text-gray-400 group-focus-within:text-[#100636] transition-colors" />
                     </div>
                     <select
-                      name="batch"
-                      value={formData.batch}
+                      id="batchFrom"
+                      name="batchFrom"
+                      value={formData.batchFrom}
                       onChange={handleMainChange}
                       className="w-full h-11 pl-10.5 pr-10 text-sm font-medium bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] transition-all appearance-none outline-none text-gray-700 cursor-pointer hover:bg-white shadow-sm"
                       required
@@ -211,28 +335,27 @@ export function TimetableUpload() {
 
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-gray-700">
-                    Stream
+                    Batch To
                   </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                       <GitBranch className="w-4 h-4 text-gray-400 group-focus-within:text-[#100636] transition-colors" />
                     </div>
                     <select
-                      name="stream"
-                      value={formData.stream}
+                      id="batchTo"
+                      name="batchTo"
+                      value={formData.batchTo}
                       onChange={handleMainChange}
                       className="w-full h-11 pl-10.5 pr-10 text-sm font-medium bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] transition-all appearance-none outline-none text-gray-700 cursor-pointer hover:bg-white shadow-sm"
                       required
                     >
                       <option value="" disabled>
-                        Select Stream
+                        Select Batch To
                       </option>
-                      <option value="CSE">CSE</option>
-                      <option value="EEE">EEE</option>
-                      <option value="ECE">ECE</option>
-                      <option value="MECH">MECH</option>
-                      <option value="CIVIL">CIVIL</option>
-                      <option value="IT">IT</option>
+                      <option value="2022">2022</option>
+                      <option value="2023">2023</option>
+                      <option value="2024">2024</option>
+                      <option value="2025">2025</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
                       <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -272,15 +395,56 @@ export function TimetableUpload() {
             </div>
 
             <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sm:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-3">
+                  <label htmlFor="dateFrom" className="block text-sm font-bold text-gray-700">Schedule From</label>
+                  <input
+                    id="dateFrom"
+                    name="dateFrom"
+                    type="date"
+                    value={formData.dateFrom}
+                    onChange={handleMainChange}
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                    required
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label htmlFor="dateTo" className="block text-sm font-bold text-gray-700">Schedule To</label>
+                  <input
+                    id="dateTo"
+                    name="dateTo"
+                    type="date"
+                    value={formData.dateTo}
+                    onChange={handleMainChange}
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                    required
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label htmlFor="instructions" className="block text-sm font-bold text-gray-700">Instructions</label>
+                  <textarea
+                    id="instructions"
+                    name="instructions"
+                    value={formData.instructions}
+                    onChange={handleMainChange}
+                    rows="3"
+                    className="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                    placeholder="Optional schedule notes"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sm:p-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold font-heading text-[#100636] flex items-center gap-2">
                   <Clock className="w-5 h-5" />
-                  Timetable Details
+                  Timetable Slots
                 </h3>
               </div>
 
               <div className="space-y-4">
-                {formData.schedule.map((row) => (
+                {formData.timeslots.map((row) => (
                   <div
                     key={row.id}
                     className="schedule-row relative grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-[#f8f9fc] p-5 rounded-2xl border border-gray-100 group transition-all animate-fade-in"
@@ -292,9 +456,9 @@ export function TimetableUpload() {
                       <div className="relative">
                         <input
                           type="time"
-                          value={row.from}
+                          value={row.from_time}
                           onChange={(e) =>
-                            handleScheduleChange(row.id, "from", e.target.value)
+                            handleTimeslotChange(row.id, "from_time", e.target.value)
                           }
                           className="w-full h-11 px-3 text-sm font-medium bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none shadow-sm text-gray-700"
                           required
@@ -309,9 +473,9 @@ export function TimetableUpload() {
                       <div className="relative">
                         <input
                           type="time"
-                          value={row.to}
+                          value={row.to_time}
                           onChange={(e) =>
-                            handleScheduleChange(row.id, "to", e.target.value)
+                            handleTimeslotChange(row.id, "to_time", e.target.value)
                           }
                           className="w-full h-11 px-3 text-sm font-medium bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none shadow-sm text-gray-700"
                           required
@@ -321,15 +485,15 @@ export function TimetableUpload() {
 
                     <div className="md:col-span-4 space-y-1.5">
                       <label className="block text-[13px] font-bold text-gray-700">
-                        Subject Name
+                        Day
                       </label>
                       <div className="relative">
                         <select
-                          value={row.subject}
+                          value={row.day}
                           onChange={(e) =>
-                            handleScheduleChange(
+                            handleTimeslotChange(
                               row.id,
-                              "subject",
+                              "day",
                               e.target.value,
                             )
                           }
@@ -337,16 +501,15 @@ export function TimetableUpload() {
                           required
                         >
                           <option value="" disabled>
-                            Select Subject
+                            Select Day
                           </option>
-                          <option value="Data Networking">
-                            Data Networking
-                          </option>
-                          <option value="Data Science">Data Science</option>
-                          <option value="Algorithms">Algorithms</option>
-                          <option value="Web Technologies">
-                            Web Technologies
-                          </option>
+                          <option value="monday">Monday</option>
+                          <option value="tuesday">Tuesday</option>
+                          <option value="wednesday">Wednesday</option>
+                          <option value="thursday">Thursday</option>
+                          <option value="friday">Friday</option>
+                          <option value="saturday">Saturday</option>
+                          <option value="sunday">Sunday</option>
                         </select>
                         <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
                           <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -356,15 +519,15 @@ export function TimetableUpload() {
 
                     <div className="md:col-span-3 space-y-1.5">
                       <label className="block text-[13px] font-bold text-gray-700">
-                        Taught By
+                        Class Type
                       </label>
                       <div className="relative">
                         <select
-                          value={row.instructor}
+                          value={row.class_type}
                           onChange={(e) =>
-                            handleScheduleChange(
+                            handleTimeslotChange(
                               row.id,
-                              "instructor",
+                              "class_type",
                               e.target.value,
                             )
                           }
@@ -372,14 +535,15 @@ export function TimetableUpload() {
                           required
                         >
                           <option value="" disabled>
-                            Select Instructor
+                            Select Class Type
                           </option>
-                          <option value="Dr. John Doe">Dr. John Doe</option>
-                          <option value="Prof. Alan Smith">
-                            Prof. Alan Smith
-                          </option>
-                          <option value="Dr. Ada Wong">Dr. Ada Wong</option>
-                          <option value="Prof. Jane Roe">Prof. Jane Roe</option>
+                          <option value="theory">Theory</option>
+                          <option value="lab">Lab</option>
+                          <option value="tutorial">Tutorial</option>
+                          <option value="break">Break</option>
+                          <option value="sports">Sports</option>
+                          <option value="mentor">Mentor</option>
+                          <option value="online">Online</option>
                         </select>
                         <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
                           <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -412,6 +576,12 @@ export function TimetableUpload() {
                 </button>
               </div>
             </div>
+
+            {message && (
+              <div className="rounded-2xl bg-[#f8fafc] border border-[#d1e8ff] px-4 py-3 text-sm text-[#0f4c81]">
+                {message}
+              </div>
+            )}
 
             <div className="pt-2 flex justify-end">
               <button

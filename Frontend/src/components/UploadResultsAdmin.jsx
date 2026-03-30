@@ -1,266 +1,465 @@
-import React, { useState, useRef } from 'react';
-import { 
-    Calendar, ChevronDown, Layers, BookOpen, 
-    CloudUpload, FileSpreadsheet, CheckCircle2, Trash2, Send 
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Calendar, ChevronDown, Layers, BookOpen, Send } from 'lucide-react';
+import { createResult } from '../services/result.services';
+import { getCollegeDetails } from '../services/verification.services';
 
 export function UploadResultsAdmin() {
-    const [formState, setFormState] = useState({
-        batch: '',
-        year: '',
-        semester: '',
-        file: null,
-        isDragging: false
-    });
+  const { type } = useParams();
+  const [formState, setFormState] = useState({
+    studentId: '',
+    subjectId: '',
+    yearFrom: '',
+    yearTo: '',
+    semesterNumber: '',
+    examType: '',
+    examMethod: '',
+    statusView: '',
+    semesterDate: '',
+    grade: '',
+    marks: '',
+    subjectStatus: '',
+    cgpa: '',
+    sgpa: ''
+  });
+  const [collegeId, setCollegeId] = useState('');
+  const [message, setMessage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const fileInputRef = useRef(null);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormState(prev => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    const loadCollege = async () => {
+      const response = await getCollegeDetails();
+      if (response.status) {
+        setCollegeId(response.college._id);
+      } else {
+        setMessage('Unable to load college details. Please refresh the page.');
+      }
     };
+    loadCollege();
+  }, []);
 
-    const handleDrag = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.type === 'dragenter' || e.type === 'dragover') {
-            setFormState(prev => ({ ...prev, isDragging: true }));
-        } else if (e.type === 'dragleave') {
-            setFormState(prev => ({ ...prev, isDragging: false }));
-        }
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormState((prev) => ({ ...prev, [name]: value }));
+  };
 
-    const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setFormState(prev => ({ ...prev, isDragging: false }));
-        
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            processFile(e.dataTransfer.files[0]);
-        }
-    };
+  const buildPayload = () => ({
+    student_id: formState.studentId,
+    college: collegeId,
+    years: [
+      {
+        from: formState.yearFrom ? new Date(formState.yearFrom) : undefined,
+        to: formState.yearTo ? new Date(formState.yearTo) : undefined,
+        semesters: [
+          {
+            exam_type: formState.examType,
+            exam_method: formState.examMethod,
+            sem_number: Number(formState.semesterNumber),
+            date: formState.semesterDate ? new Date(formState.semesterDate) : undefined,
+            status_view: formState.statusView,
+            registerd_subjects: [
+              {
+                subject_id: formState.subjectId,
+                grade: Number(formState.grade),
+                marks: Number(formState.marks),
+                status: formState.subjectStatus
+              }
+            ],
+            cgpa: formState.cgpa ? Number(formState.cgpa) : undefined,
+            sgpa: formState.sgpa ? Number(formState.sgpa) : undefined
+          }
+        ]
+      }
+    ]
+  });
 
-    const handleFileSelect = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            processFile(e.target.files[0]);
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage(null);
 
-    const processFile = (file) => {
-        if (file.type === "text/csv" || file.name.toLowerCase().endsWith('.csv')) {
-            setFormState(prev => ({ ...prev, file: file }));
-        } else {
-            alert('Invalid file format. Please upload a CSV file only.');
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-    };
+    if (!collegeId) {
+      setMessage('College information is missing.');
+      return;
+    }
 
-    const removeFile = () => {
-        setFormState(prev => ({ ...prev, file: null }));
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
+    if (
+      !formState.studentId ||
+      !formState.subjectId ||
+      !formState.yearFrom ||
+      !formState.yearTo ||
+      !formState.semesterNumber ||
+      !formState.examType ||
+      !formState.examMethod ||
+      !formState.statusView ||
+      !formState.semesterDate ||
+      !formState.grade ||
+      !formState.marks ||
+      !formState.subjectStatus
+    ) {
+      setMessage('Please complete all required fields before submitting.');
+      return;
+    }
 
-    const getFileSize = (bytes) => {
-        const kb = bytes / 1024;
-        if (kb > 1024) {
-            return (kb / 1024).toFixed(2) + ' MB';
-        }
-        return kb.toFixed(2) + ' KB';
-    };
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setMessage('Authentication token not found. Please log in again.');
+      return;
+    }
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log("Submitting:", formState);
-    };
+    setIsSubmitting(true);
+    const response = await createResult(type, collegeId, token, buildPayload());
+    setIsSubmitting(false);
 
-    return (
-        <div className="bg-gray-50 flex flex-col h-dvh overflow-hidden font-body">
-            <header className="bg-[#100636] shadow-md h-16 flex items-center px-4 sm:px-8 shrink-0 z-40">
-                <div className="flex items-center w-full max-w-5xl">
-                    <h1 className="font-heading font-bold text-lg text-white tracking-wide">Upload Results</h1>
-                </div>
-            </header>
+    if (response.status) {
+      setMessage('Result record created successfully.');
+      setFormState({
+        studentId: '',
+        subjectId: '',
+        yearFrom: '',
+        yearTo: '',
+        semesterNumber: '',
+        examType: '',
+        examMethod: '',
+        statusView: '',
+        semesterDate: '',
+        grade: '',
+        marks: '',
+        subjectStatus: '',
+        cgpa: '',
+        sgpa: ''
+      });
+    } else {
+      setMessage(`Failed to create result: ${response.error?.message || response.error || 'Unknown error'}`);
+    }
+  };
 
-            <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative bg-gray-50 overflow-y-auto">
-                <div className="p-6 md:p-8 lg:p-10 max-w-5xl mx-auto w-full">
-                    
-                    <div className="mb-8">
-                        <h1 className="text-3xl lg:text-4xl font-heading font-bold tracking-tight text-gray-900">Upload Results</h1>
-                        <p className="text-gray-500 mt-2 text-sm sm:text-base font-medium">
-                            Upload student examination results via CSV format. Ensure the batch, year, and semester are correctly selected before uploading.
-                        </p>
-                    </div>
-
-                    <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sm:p-8 lg:p-10 relative overflow-hidden">
-                        
-                        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-[#e7e5fc] rounded-full blur-3xl opacity-50 z-0 pointer-events-none"></div>
-
-                        <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <label htmlFor="batch" className="block text-sm font-bold text-gray-700">Batch Year</label>
-                                    <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <Calendar className="w-5 h-5 text-gray-400 group-focus-within:text-[#100636] transition-colors" />
-                                        </div>
-                                        <select 
-                                            id="batch" 
-                                            name="batch" 
-                                            value={formState.batch}
-                                            onChange={handleChange}
-                                            className="w-full h-12 pl-11 pr-10 text-sm font-medium bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] transition-all appearance-none outline-none text-gray-700 cursor-pointer hover:bg-gray-50"
-                                        >
-                                            <option value="" disabled>Select Batch</option>
-                                            <option value="2021">2021</option>
-                                            <option value="2022">2022</option>
-                                            <option value="2023">2023</option>
-                                            <option value="2024">2024</option>
-                                        </select>
-                                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label htmlFor="year" className="block text-sm font-bold text-gray-700">Academic Year</label>
-                                    <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <Layers className="w-5 h-5 text-gray-400 group-focus-within:text-[#100636] transition-colors" />
-                                        </div>
-                                        <select 
-                                            id="year" 
-                                            name="year" 
-                                            value={formState.year}
-                                            onChange={handleChange}
-                                            className="w-full h-12 pl-11 pr-10 text-sm font-medium bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] transition-all appearance-none outline-none text-gray-700 cursor-pointer hover:bg-gray-50"
-                                        >
-                                            <option value="" disabled>Select Year</option>
-                                            <option value="1">1st Year</option>
-                                            <option value="2">2nd Year</option>
-                                            <option value="3">3rd Year</option>
-                                            <option value="4">4th Year</option>
-                                        </select>
-                                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label htmlFor="semester" className="block text-sm font-bold text-gray-700">Semester</label>
-                                    <div className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <BookOpen className="w-5 h-5 text-gray-400 group-focus-within:text-[#100636] transition-colors" />
-                                        </div>
-                                        <select 
-                                            id="semester" 
-                                            name="semester" 
-                                            value={formState.semester}
-                                            onChange={handleChange}
-                                            className="w-full h-12 pl-11 pr-10 text-sm font-medium bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] transition-all appearance-none outline-none text-gray-700 cursor-pointer hover:bg-gray-50"
-                                        >
-                                            <option value="" disabled>Select Semester</option>
-                                            <option value="1">1st Semester</option>
-                                            <option value="2">2nd Semester</option>
-                                        </select>
-                                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 pt-2">
-                                <label className="block text-sm font-bold text-gray-700">Results File</label>
-                                
-                                {!formState.file ? (
-                                    <div 
-                                        onDragEnter={handleDrag}
-                                        onDragLeave={handleDrag}
-                                        onDragOver={handleDrag}
-                                        onDrop={handleDrop}
-                                        className={`relative group flex justify-center px-6 py-12 md:py-16 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden
-                                            ${formState.isDragging 
-                                                ? 'border-[rgba(16,6,54,0.5)] bg-[#e7e5fc]/30' 
-                                                : 'border-gray-300 bg-gray-50/50 hover:bg-[#e7e5fc]/30 hover:border-[#100636]/50'
-                                            }`}
-                                        onClick={() => fileInputRef.current?.click()}
-                                    >
-                                        <div className="space-y-4 text-center pointer-events-none">
-                                            <div className="w-20 h-20 mx-auto bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 group-hover:scale-110 group-hover:shadow-md transition-all duration-300 relative">
-                                                <div className="absolute inset-0 bg-[#e7e5fc] rounded-full animate-ping opacity-0 group-hover:opacity-40 transition-opacity"></div>
-                                                <CloudUpload className="w-10 h-10 text-[#100636] group-hover:text-[#1a0b54]" />
-                                            </div>
-                                            <div className="flex flex-col text-sm text-gray-600 justify-center items-center gap-1">
-                                                <div className="relative cursor-pointer bg-transparent rounded-md font-bold text-[#100636] hover:text-[#1a0b54] focus-within:outline-none pointer-events-auto">
-                                                    <span className="text-base">Click to browse</span>
-                                                    <input 
-                                                        ref={fileInputRef}
-                                                        id="file-upload" 
-                                                        name="file-upload" 
-                                                        type="file" 
-                                                        accept=".csv" 
-                                                        className="sr-only"
-                                                        onChange={handleFileSelect}
-                                                    />
-                                                </div>
-                                                <p className="text-gray-500 font-medium tracking-wide">or drag and drop your file here</p>
-                                            </div>
-                                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-xs font-semibold text-gray-500">
-                                                <FileSpreadsheet className="w-3.5 h-3.5" />
-                                                CSV ONLY (MAX. 10MB)
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center justify-between p-4 sm:p-5 bg-linear-to-r from-[#e7e5fc]/30 to-white border border-[#100636]/20 rounded-2xl shadow-sm animate-in fade-in zoom-in-95 duration-300">
-                                        <div className="flex items-center gap-4 overflow-hidden">
-                                            <div className="w-12 h-12 shrink-0 bg-[#e7e5fc]/50 rounded-xl flex items-center justify-center border border-[#100636]/20">
-                                                <FileSpreadsheet className="w-6 h-6 text-[#100636]" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-bold text-gray-900 truncate">{formState.file.name}</p>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                                                        {getFileSize(formState.file.size)}
-                                                    </span>
-                                                    <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
-                                                        <CheckCircle2 className="w-3 h-3" /> Ready
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            type="button" 
-                                            onClick={removeFile}
-                                            className="ml-4 shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100 group" 
-                                            title="Remove file"
-                                        >
-                                            <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="pt-8 border-t border-gray-100 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 sm:gap-4">
-                                <button type="button" className="w-full sm:w-auto px-6 py-3 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-all shadow-sm">
-                                    Cancel
-                                </button>
-                                <button 
-                                    type="submit" 
-                                    disabled={!formState.file || !formState.batch || !formState.year || !formState.semester}
-                                    className="w-full sm:w-auto px-8 py-3 text-sm font-bold text-white bg-[#100636] border border-transparent rounded-xl hover:bg-[#1a0b54] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#100636] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Send className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
-                                    Submit Results
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </main>
+  return (
+    <div className="bg-gray-50 flex flex-col h-dvh overflow-hidden font-body">
+      <header className="bg-[#100636] shadow-md h-16 flex items-center px-4 sm:px-8 shrink-0 z-40">
+        <div className="flex items-center w-full max-w-5xl">
+          <h1 className="font-heading font-bold text-lg text-white tracking-wide">Upload Results</h1>
         </div>
-    );
+      </header>
+
+      <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative bg-gray-50 overflow-y-auto">
+        <div className="p-6 md:p-8 lg:p-10 max-w-5xl mx-auto w-full">
+          <div className="mb-8">
+            <h1 className="text-3xl lg:text-4xl font-heading font-bold tracking-tight text-gray-900">Upload Results</h1>
+            <p className="text-gray-500 mt-2 text-sm sm:text-base font-medium">
+              Create backend-aligned student result records for this college.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sm:p-8 lg:p-10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-[#e7e5fc] rounded-full blur-3xl opacity-50 z-0 pointer-events-none"></div>
+
+            <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label htmlFor="studentId" className="block text-sm font-bold text-gray-700">Student ID</label>
+                  <input
+                    id="studentId"
+                    name="studentId"
+                    value={formState.studentId}
+                    onChange={handleChange}
+                    placeholder="MongoDB student ObjectId"
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="subjectId" className="block text-sm font-bold text-gray-700">Subject ID</label>
+                  <input
+                    id="subjectId"
+                    name="subjectId"
+                    value={formState.subjectId}
+                    onChange={handleChange}
+                    placeholder="MongoDB subject ObjectId"
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="yearFrom" className="block text-sm font-bold text-gray-700">Academic Year From</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Calendar className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="yearFrom"
+                      name="yearFrom"
+                      type="date"
+                      value={formState.yearFrom}
+                      onChange={handleChange}
+                      className="w-full h-12 pl-11 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="yearTo" className="block text-sm font-bold text-gray-700">Academic Year To</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Calendar className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="yearTo"
+                      name="yearTo"
+                      type="date"
+                      value={formState.yearTo}
+                      onChange={handleChange}
+                      className="w-full h-12 pl-11 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="semesterNumber" className="block text-sm font-bold text-gray-700">Semester Number</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <BookOpen className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <select
+                      id="semesterNumber"
+                      name="semesterNumber"
+                      value={formState.semesterNumber}
+                      onChange={handleChange}
+                      className="w-full h-12 pl-11 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700 cursor-pointer"
+                      required
+                    >
+                      <option value="" disabled>Select Semester</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="examType" className="block text-sm font-bold text-gray-700">Exam Type</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Layers className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <select
+                      id="examType"
+                      name="examType"
+                      value={formState.examType}
+                      onChange={handleChange}
+                      className="w-full h-12 pl-11 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700 cursor-pointer"
+                      required
+                    >
+                      <option value="" disabled>Select Exam Type</option>
+                      <option value="internal">Internal</option>
+                      <option value="external">External</option>
+                      <option value="lab internal">Lab Internal</option>
+                      <option value="lab external">Lab External</option>
+                      <option value="others">Others</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="examMethod" className="block text-sm font-bold text-gray-700">Exam Method</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <BookOpen className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <select
+                      id="examMethod"
+                      name="examMethod"
+                      value={formState.examMethod}
+                      onChange={handleChange}
+                      className="w-full h-12 pl-11 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700 cursor-pointer"
+                      required
+                    >
+                      <option value="" disabled>Select Exam Method</option>
+                      <option value="regular">Regular</option>
+                      <option value="supplymentary">Supplymentary</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="statusView" className="block text-sm font-bold text-gray-700">Status View</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <BookOpen className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <select
+                      id="statusView"
+                      name="statusView"
+                      value={formState.statusView}
+                      onChange={handleChange}
+                      className="w-full h-12 pl-11 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700 cursor-pointer"
+                      required
+                    >
+                      <option value="" disabled>Select Status View</option>
+                      <option value="active">Active</option>
+                      <option value="not active">Not Active</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="semesterDate" className="block text-sm font-bold text-gray-700">Semester Date</label>
+                  <input
+                    id="semesterDate"
+                    name="semesterDate"
+                    type="date"
+                    value={formState.semesterDate}
+                    onChange={handleChange}
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="grade" className="block text-sm font-bold text-gray-700">Grade</label>
+                  <input
+                    id="grade"
+                    name="grade"
+                    type="number"
+                    min="0"
+                    value={formState.grade}
+                    onChange={handleChange}
+                    placeholder="e.g. 8"
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="marks" className="block text-sm font-bold text-gray-700">Marks</label>
+                  <input
+                    id="marks"
+                    name="marks"
+                    type="number"
+                    min="0"
+                    value={formState.marks}
+                    onChange={handleChange}
+                    placeholder="e.g. 85"
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="subjectStatus" className="block text-sm font-bold text-gray-700">Subject Status</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <BookOpen className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <select
+                      id="subjectStatus"
+                      name="subjectStatus"
+                      value={formState.subjectStatus}
+                      onChange={handleChange}
+                      className="w-full h-12 pl-11 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700 cursor-pointer"
+                      required
+                    >
+                      <option value="" disabled>Select Subject Status</option>
+                      <option value="present">Present</option>
+                      <option value="absent">Absent</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="cgpa" className="block text-sm font-bold text-gray-700">CGPA (Optional)</label>
+                  <input
+                    id="cgpa"
+                    name="cgpa"
+                    type="number"
+                    step="0.01"
+                    value={formState.cgpa}
+                    onChange={handleChange}
+                    placeholder="e.g. 8.25"
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="sgpa" className="block text-sm font-bold text-gray-700">SGPA (Optional)</label>
+                  <input
+                    id="sgpa"
+                    name="sgpa"
+                    type="number"
+                    step="0.01"
+                    value={formState.sgpa}
+                    onChange={handleChange}
+                    placeholder="e.g. 7.95"
+                    className="w-full h-12 px-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#100636]/20 focus:border-[#100636] outline-none text-gray-700"
+                  />
+                </div>
+              </div>
+
+              {message && (
+                <div className="rounded-2xl bg-[#f8fafc] border border-[#d1e8ff] px-4 py-3 text-sm text-[#0f4c81]">
+                  {message}
+                </div>
+              )}
+
+              <div className="pt-8 border-t border-gray-100 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 sm:gap-4">
+                <button
+                  type="button"
+                  onClick={() => setFormState({
+                    studentId: '',
+                    subjectId: '',
+                    yearFrom: '',
+                    yearTo: '',
+                    semesterNumber: '',
+                    examType: '',
+                    examMethod: '',
+                    statusView: '',
+                    semesterDate: '',
+                    grade: '',
+                    marks: '',
+                    subjectStatus: '',
+                    cgpa: '',
+                    sgpa: ''
+                  })}
+                  className="w-full sm:w-auto px-6 py-3 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-all shadow-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-8 py-3 text-sm font-bold text-white bg-[#100636] border border-transparent rounded-xl hover:bg-[#1a0b54] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#100636] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className="w-4 h-4" />
+                  {isSubmitting ? 'Submitting...' : 'Submit Results'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
