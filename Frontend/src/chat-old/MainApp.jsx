@@ -794,11 +794,8 @@ export function MainApp() {
   });
 
   return (
-    <div className="flex h-screen w-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 text-slate-800 overflow-hidden antialiased font-body selection:bg-indigo-500/30">
-      <div 
-        style={{ width: state.sidebarWidth, minWidth: 250, maxWidth: '50vw' }} 
-        className={`h-full shrink-0 flex flex-col border-r border-slate-200/80 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-transform duration-300 z-10 max-md:fixed max-md:inset-0 max-md:z-50 ${state.activeChatId ? 'max-md:hidden' : 'max-md:flex'}`}
-      >
+    <div className="flex h-screen w-screen bg-[#f1f5f9] text-[#1e293b] overflow-hidden antialiased font-['Inter']">
+      <div style={{ width: state.sidebarWidth, minWidth: 250, maxWidth: '50vw' }} className="h-full shrink-0 flex flex-col z-10 max-md:w-full! max-md:fixed max-md:inset-0 max-md:z-50">
         <ChatSidebar
           chats={displayChats}
           participants={state.participants}
@@ -814,10 +811,7 @@ export function MainApp() {
         />
       </div>
 
-      <div 
-        onMouseDown={startResizing} 
-        className="max-md:hidden w-1.5 cursor-col-resize bg-transparent hover:bg-indigo-100/50 active:bg-indigo-200/60 transition-colors z-50 shrink-0 relative after:content-[''] after:absolute after:inset-y-0 after:-left-1 after:-right-1"
-      ></div>
+      <div onMouseDown={startResizing} className="max-md:hidden w-1 cursor-col-resize bg-transparent hover:bg-blue-400 active:bg-blue-500 transition-colors z-50 shrink-0"></div>
 
       <div className="relative flex-1 flex overflow-hidden">
         <ChatArea
@@ -870,46 +864,47 @@ export function MainApp() {
       {state.fullscreenImage && <ImageModal imageUrl={state.fullscreenImage} onClose={() => setState(prev => ({ ...prev, fullscreenImage: null }))} />}
 
       {groupModal.open && (
-        <div className="fixed inset-0 z-[300] bg-black/20 backdrop-blur-sm flex items-center justify-center animate-[fadeIn_0.15s_ease-out]" onClick={closeGroupModal}>
-          <div className="bg-white w-[min(92vw,520px)] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.14)] overflow-hidden max-h-[90vh] flex flex-col border border-slate-100" onClick={(e) => e.stopPropagation()}>
-            <div className="flex h-[60px] items-center justify-between px-6 bg-[#3551FD] border-b border-[#2a45d8] shrink-0">
+        <div className="fixed inset-0 z-300 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-[fadeIn_0.15s_ease-out]" onClick={closeGroupModal}>
+          <div className="bg-white w-[min(92vw,720px)] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-slate-200">
               <div>
-                <h2 className="text-[16px] font-semibold text-white font-heading">{isAddingMembers ? `Add Members to ${activeGroupForAdd?.name || 'Group'}` : 'Create Group Chat'}</h2>
+                <h2 className="text-xl font-semibold text-slate-900">{isAddingMembers ? `Add Members to ${activeGroupForAdd?.name || 'Group'}` : 'Create Group Chat'}</h2>
+                <p className="text-sm text-slate-500">{isAddingMembers ? 'Choose new participants to add to this group.' : 'Add a name and choose members from your college list.'}</p>
               </div>
-              <button onClick={closeGroupModal} className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-full outline-none transition-all">✕</button>
+              <button onClick={closeGroupModal} className="text-slate-400 hover:text-slate-700 outline-none">✕</button>
             </div>
 
             <div className="p-5 space-y-4 overflow-y-auto">
               {!isAddingMembers && (
                 <div>
-                  <label className="block text-[13px] font-semibold text-slate-700 mb-2">Group Name</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Group Name</label>
                   <input
                     type="text"
                     value={groupModal.name}
                     onChange={(e) => handleGroupNameChange(e.target.value)}
                     placeholder="e.g. Project Team, Study Group"
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-[13px] font-semibold text-slate-700 mb-2">Search college members</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Search college members</label>
                 <input
                   type="text"
                   value={groupModal.search}
                   onChange={(e) => handleGroupSearchChange(e.target.value)}
                   placeholder="Search by name or role"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[13px] font-semibold text-slate-800">Select Members</h3>
-                  <span className="text-[12px] text-indigo-600 font-semibold">{groupModal.selected.length} selected</span>
+                  <h3 className="text-sm font-semibold text-slate-900">Select Members</h3>
+                  <span className="text-xs text-slate-500">{groupModal.selected.length} selected</span>
                 </div>
-                <div className="grid gap-2 max-h-[40vh] overflow-y-auto p-1 border border-slate-100 rounded-2xl bg-slate-50/60 [&::-webkit-scrollbar]:w-[5px] [&::-webkit-scrollbar-thumb]:bg-slate-300">
+                <div className="grid gap-2 max-h-[40vh] overflow-y-auto p-1 border border-slate-200 rounded-2xl bg-slate-50">
                   {filteredModalCandidates.map(participant => {
                     const selected = groupModal.selected.includes(participant.user_id);
                     return (
@@ -917,30 +912,30 @@ export function MainApp() {
                         key={participant.user_id}
                         type="button"
                         onClick={() => handleToggleGroupMember(participant.user_id)}
-                        className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 ${selected ? 'bg-indigo-600 text-white shadow-[0_2px_8px_rgba(79,70,229,0.3)]' : 'bg-white text-slate-800 hover:bg-slate-100 border border-slate-100'}`}
+                        className={`w-full flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${selected ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 hover:bg-slate-100'}`}
                       >
-                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-bold ${selected ? 'border-white bg-white text-indigo-600' : 'border-slate-300'}`}>
+                        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-white bg-white text-blue-600' : 'border-slate-300'}`}>
                           {selected ? '✓' : ''}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="truncate font-semibold text-[14px]">{participant.name}</p>
-                          <p className={`truncate text-[12px] font-medium ${selected ? 'text-indigo-200' : 'text-slate-500'}`}>{participant.user_type || 'College member'}</p>
+                          <p className="truncate font-medium">{participant.name}</p>
+                          <p className="truncate text-xs text-slate-500">{participant.user_type || 'College member'}</p>
                         </div>
                       </button>
                     );
                   })}
                   {filteredModalCandidates.length === 0 && (
-                    <div className="px-4 py-8 text-center text-sm text-slate-500 font-medium">No members found.</div>
+                    <div className="px-4 py-8 text-center text-sm text-slate-500">No members found.</div>
                   )}
                 </div>
               </div>
 
-              {groupModal.error && <p className="text-[13px] text-red-600 font-medium bg-red-50 px-4 py-2 rounded-xl border border-red-100">{groupModal.error}</p>}
+              {groupModal.error && <p className="text-sm text-red-600">{groupModal.error}</p>}
             </div>
 
-            <div className="flex items-center gap-3 justify-end p-5 border-t border-slate-100 bg-slate-50/50">
-              <button onClick={closeGroupModal} className="rounded-xl border border-slate-200 px-5 py-2.5 text-[14px] font-semibold text-slate-700 hover:bg-slate-100 transition-colors">Cancel</button>
-              <button onClick={handleCreateGroup} className="rounded-xl bg-indigo-600 px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-indigo-700 shadow-[0_4px_14px_rgba(79,70,229,0.4)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)] hover:-translate-y-[1px] transition-all">{isAddingMembers ? 'Add Members' : 'Create Group'}</button>
+            <div className="flex items-center gap-3 justify-end p-5 border-t border-slate-200 bg-slate-50">
+              <button onClick={closeGroupModal} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</button>
+              <button onClick={handleCreateGroup} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">{isAddingMembers ? 'Add Members' : 'Create Group'}</button>
             </div>
           </div>
         </div>

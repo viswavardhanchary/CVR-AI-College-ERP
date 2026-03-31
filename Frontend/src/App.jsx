@@ -33,7 +33,7 @@ function App() {
       children: [
         //all
         {
-          path: '',
+          index: true,
           element: <Home/>
         },
         

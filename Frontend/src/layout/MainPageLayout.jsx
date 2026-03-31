@@ -7,6 +7,7 @@ import { getCollegeDetails, verify } from "../services/verification.services";
 import { StudentDashboard } from "./StudentDashboard";
 import { TeacherDashboard } from "./TeacherDashboard";
 import { AdminDashboard } from "./AdminDashboard";
+import { ChatbotWidget } from "../components/ChatbotWidget";
 
 export function MainPageLayout() {
   const [userType, setUserType] = useState(null);
@@ -38,6 +39,7 @@ export function MainPageLayout() {
       }
     }
   }
+
   return (
     <>
       <div>
@@ -57,6 +59,9 @@ export function MainPageLayout() {
         </>
         }
       </div>
+
+      {/* Global chatbot widget — visible across all routes & user types */}
+      {userType && <ChatbotWidget />}
     </>
   )
 }
